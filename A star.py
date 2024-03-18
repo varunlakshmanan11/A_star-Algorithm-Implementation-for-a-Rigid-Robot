@@ -7,7 +7,8 @@ import time
 import math
 
 # Creating a empty space for drawing graph.
-Graph_map = np.ones((500, 1200, 3), dtype=np.uint8)*255
+Graph_map = np.ones((500, 1200, 12), dtype=np.uint8)*255
+G = np.zeros((500, 1200, 12), dtype=np.uint8)
 
 # Center of the hexagon.
 center_h = (650,250)
@@ -151,3 +152,75 @@ def movement_5(node):
     x, y, theta = new_node
     return x, y, theta
     
+def possible_node(node):
+    x, y, theta = node
+    new_node = []
+    action_set = {movement_1:1,
+                  movement_2:1,
+                  movement_3:1,
+                  movement_4:1,
+                  movement_5:1}
+
+    new_nodes = []
+    for action, cost in action_set.items():
+        new_node = action(node)
+        x, y, theta = new_node
+        if x >= 0 and x < 1200 and y >= 0 and y < 500 and is_free_space(int(x), int(y)):
+            new_nodes.append((cost, new_node))
+
+    return new_nodes
+
+def heuristc(node, goal):
+    x1, y1, _ = node
+    x2, y2, _ = goal
+    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+def A_star(start_node, goal_node):
+    parent = {}
+    cost_list = {start_node:0}
+    closed_list = set()
+    open_list = PriorityQueue()
+    open_list.put((0, start_node))
+    visted_nodes(start_node)
+    
+    while not open_list.empty():
+        current = open_list.get()
+        current_cost, current_node = current
+        closed_list.add(current_node)
+        if heuristc(current_node, goal_node) < 1.5:
+            path = A_star_Backtracting(parent, start_node, current_node, Graph_map, 0)
+            break
+        
+        for cost, new_node in possible_node(current_node):
+            cost_to_come = current_cost + cost
+            if new_node in closed_list and not visited(new_node):
+                continue
+            if new_node not in cost_list or cost_to_come < cost_list[new_node]:
+                cost_list[new_node] = cost_to_come
+                parent[new_node] = current_node
+                cost_total = cost_to_come + heuristc(new_node, goal_node) 
+                open_list.put((cost_total, new_node))
+    return path
+
+def visted_nodes(node):
+    x, y, theta = node
+    a = int(x/0.5)
+    b = int(y/0.5)
+    c = int(theta/30)
+    G[a][b][c] = 1
+
+def visited(node):
+    x, y, theta = node
+    a = int(x/0.5)
+    b = int(y/0.5)
+    c = int(theta/30) 
+    G[a][b][c] == 1
+
+
+def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_count):
+    path = [end_node] # Adding end node to the path
+    while end_node != start_node: # If the end node is not equal to start_node, parent of the end_node is added to path and continues.
+        path.append(parent[end_node])
+        end_node = parent[end_node] # The parent of end node becomes the current node.
+    path.reverse()
+    return path
