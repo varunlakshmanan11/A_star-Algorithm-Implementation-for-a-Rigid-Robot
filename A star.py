@@ -7,7 +7,7 @@ import time
 import math
 
 # Creating a empty space for drawing graph.
-Graph_map = np.ones((500, 1200, 12), dtype=np.uint8)*255
+Graph_map = np.ones((500, 1200, 3), dtype=np.uint8)*255
 G = np.zeros((500, 1200, 12), dtype=np.uint8)
 
 # Center of the hexagon.
@@ -64,62 +64,27 @@ for x in range(1200):
         elif (x >= 900 and x <= 1100 and y_transform >= 375 and y_transform <= 450):
             Graph_map[y,x] = [0,0,0]
 
-def draw_hexagon_using_half_planes(x,y):
-    
-    cx, cy = 650, 250
-    side = 150
-    r = side * np.cos(np.radians(30))  # radius of the hexagon
-    y = abs(y - 500)  # inverted to match the map given
-    # Horizontal boundary points of the hexagon are calculated using the radius of the hexagon
-    x_boundary_left , x_boundary_right  = cx - r, cx + r
-    y_top = 325
-    y_bottom = 175
-    # diagoonal boundary line eqaution
-    y_top_left = ((np.radians(30))*(x - x_boundary_left))+ y_top
-    y_top_right = - ((np.radians(30))*(x - x_boundary_right))+ y_top
-    y_bottom_right =  ((np.radians(30))*(x - x_boundary_right))+ y_bottom
-    y_bottom_left = - ((np.radians(30))*(x - x_boundary_left))+ y_bottom
-
-    # Check if the point is inside the hexagon
-    if (x >= x_boundary_left and x <= x_boundary_right and y<= y_top_left and y>= y_bottom_left and y<= y_top_right and y>= y_bottom_right):
-        return True
-    else:
-        return False
-
-def hex_clearance(x,y):
-    
-    cx, cy = 650, 250
-    side = 150
-    clearance = 5
-    r = side * np.cos(np.radians(30)) + clearance  # radius of the hexagon
-    y = abs(y - 500)  # inverted to match the map given
-    # Horizontal boundary points of the hexagon are calculated using the radius of the hexagon
-    x_boundary_left , x_boundary_right  = cx - r, cx + r
-    y_top = 325
-    y_bottom = 175
-    # Diagonal boundary line eqaution
-    y_top_left = ((np.radians(30))*(x - x_boundary_left))+ y_top + clearance
-    y_top_right = - ((np.radians(30))*(x - x_boundary_right))+ y_top + clearance
-    y_bottom_right =  ((np.radians(30))*(x - x_boundary_right))+ y_bottom - clearance
-    y_bottom_left = - ((np.radians(30))*(x - x_boundary_left))+ y_bottom - clearance
-
-    # Check if the point is inside the hexagon
-    if (x >= x_boundary_left and x <= x_boundary_right and y<= y_top_left and y>= y_bottom_left and y<= y_top_right and y>= y_bottom_right):
-        return True
-    else:
-        return False
-    
-for x in range(1200):
-    for y in range(500):
-        if hex_clearance(x, y):
-            Graph_map[y, x] = (0, 0, 255)
-        if draw_hexagon_using_half_planes(x, y):
-            Graph_map[y, x] = (0, 0, 0)    
+# object 4 (hexagon)
+def hexagon(x, y, vertices): # Defining a function to calucalate cross product of vertices inside hexagon.
+    result = np.zeros(x.shape, dtype=bool)
+    num_vertices = len(vertices)
+    for i in range(num_vertices):
+        j = (i + 1) % num_vertices
+        cross_product = (vertices[j, 1] - vertices[i, 1]) * (x - vertices[i, 0]) - (vertices[j, 0] - vertices[i, 0]) * (y - vertices[i, 1])
+        result |= cross_product > 0
+    return ~result
 
 
-def is_free_space(x, y):
-    return np.array_equal(Graph_map[y, x], [255, 255, 255])
+x, y = np.meshgrid(np.arange(1200), np.arange(500))
 
+hexagon_original = hexagon(x, y, vertices)
+hexagon_clearance = hexagon(x, y,clearance_verticies) & ~hexagon_original
+
+# Drawing hexagon and its clearance on the graph_map.
+Graph_map[hexagon_clearance] = [0, 255, 0]
+Graph_map[hexagon_original] = [0, 0, 0]
+
+output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 60, (1200, 500))
 
 # Creating Action sets.
 def movement_1(node):
@@ -164,9 +129,10 @@ def possible_node(node):
     new_nodes = []
     for action, cost in action_set.items():
         new_node = action(node)
-        x, y, theta = new_node
-        if x >= 0 and x < 1200 and y >= 0 and y < 500 and is_free_space(int(x), int(y)):
-            new_nodes.append((cost, new_node))
+        next_x, next_y, new_theta = new_node
+        if next_x >= 0 and next_x < 1200 and next_y >= 0 and next_y < 500 and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]):
+            if new_node not in new_nodes:
+                new_nodes.append((cost, new_node))
 
     return new_nodes
 
@@ -181,6 +147,8 @@ def A_star(start_node, goal_node):
     closed_list = set()
     open_list = PriorityQueue()
     open_list.put((0, start_node))
+    map_visualization = np.copy(Graph_map)
+    step_count = 0 
     visted_nodes(start_node)
     
     while not open_list.empty():
@@ -188,33 +156,41 @@ def A_star(start_node, goal_node):
         current_cost, current_node = current
         closed_list.add(current_node)
         if heuristc(current_node, goal_node) < 1.5:
-            path = A_star_Backtracting(parent, start_node, current_node, Graph_map, 0)
+            path = A_star_Backtracting(parent, start_node, current_node, map_visualization, step_count)
+            for _ in range(30):
+                output.write(map_visualization)
             break
         
         for cost, new_node in possible_node(current_node):
             cost_to_come = current_cost + cost
-            if new_node in closed_list and not visited(new_node):
+            if new_node in closed_list and visited(new_node):
                 continue
             if new_node not in cost_list or cost_to_come < cost_list[new_node]:
                 cost_list[new_node] = cost_to_come
                 parent[new_node] = current_node
                 cost_total = cost_to_come + heuristc(new_node, goal_node) 
                 open_list.put((cost_total, new_node))
-    return path
+                cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (255, 0, 0), 1)
+                if step_count % 100000 == 0:
+                    output.write(map_visualization)
+                step_count += 1
+    
+    output.release()
+    return None
 
 def visted_nodes(node):
     x, y, theta = node
     a = int(x/0.5)
     b = int(y/0.5)
-    c = int(theta/30)
+    c = int(theta/30) % 12
     G[a][b][c] = 1
 
 def visited(node):
     x, y, theta = node
     a = int(x/0.5)
     b = int(y/0.5)
-    c = int(theta/30) 
-    G[a][b][c] == 1
+    c = int(theta/30) % 12
+    return G[a][b][c] == 1
 
 
 def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_count):
@@ -223,4 +199,16 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         path.append(parent[end_node])
         end_node = parent[end_node] # The parent of end node becomes the current node.
     path.reverse()
+    for j in range(1, len(path)):
+        start_point = (int(path[j - 1][0]), int(500 - path[j - 1][1]))
+        end_point = (int(path[j][0]), int(500 - path[j][1]))
+        cv2.line(map_visualization, start_point, end_point, (0, 0, 255), thickness=2)  # Drawing lines to explore the path.
+        if step_count % 15 == 0:
+            output.write(map_visualization)
+        step_count += 1
     return path
+
+start_node = (200,50,0)
+goal_node = (1150, 450, 0)
+
+path = A_star(start_node, goal_node)
