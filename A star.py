@@ -1,15 +1,13 @@
-# Importing Necessary libraries.
 import numpy as np
 import matplotlib.pyplot as plt 
 from queue import PriorityQueue
 import cv2
 import time
-import math
 
 # Creating a empty space for drawing graph.
 Graph_map = np.ones((500, 1200, 3), dtype=np.uint8)*255
-G = np.zeros((500, 1200, 12), dtype=np.uint8)
-
+G = np.zeros((1000, 2400, 12), dtype=np.uint8)
+step_size = 1
 # Center of the hexagon.
 center_h = (650,250)
 # Side of hexagon.
@@ -63,7 +61,7 @@ for x in range(1200):
             Graph_map[y,x] = [0,0,0]
         elif (x >= 900 and x <= 1100 and y_transform >= 375 and y_transform <= 450):
             Graph_map[y,x] = [0,0,0]
-
+        
 # object 4 (hexagon)
 def hexagon(x, y, vertices): # Defining a function to calucalate cross product of vertices inside hexagon.
     result = np.zeros(x.shape, dtype=bool)
@@ -87,111 +85,114 @@ Graph_map[hexagon_original] = [0, 0, 0]
 output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 60, (1200, 500))
 
 # Creating Action sets.
-def movement_1(node):
+def movement_1(node, step_size):
     x, y, theta = node
-    new_node = (x + np.cos(np.radians(theta)), y + np.sin(np.radians(theta)), theta)
+    new_node = (x + step_size * np.cos(np.radians(theta)), y + np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
 
-def movement_2(node):
+def movement_2(node, step_size):
     x, y, theta = node
-    new_node = (x + np.cos(np.radians(theta + 30)), y + np.sin(np.radians(theta + 30)), theta + 30)
+    theta_i = (theta + 30) % 360
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
-    return x,y,theta
+    return x, y, theta
 
-def movement_3(node):
+def movement_3(node, step_size):
     x, y, theta = node
-    new_node = (x + np.cos(np.radians(theta + 60)), y + np.sin(np.radians(theta + 60)), theta + 60)
+    theta_i = (theta + 60) % 360
+    new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
-    return x,y,theta
+    return x, y, theta
 
-def movement_4(node):
+def movement_4(node, step_size):
     x, y, theta = node
-    new_node = (x + np.cos(np.radians(theta - 30)), y + np.sin(np.radians(theta - 30)), theta - 30)
+    theta_i = (theta - 30) % 360
+    new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
-    return x,y,theta
+    return x, y, theta 
 
-def movement_5(node):
+def movement_5(node, step_size):
     x, y, theta = node
-    new_node = (x + np.cos(np.radians(theta - 60)), y + np.sin(np.radians(theta - 60)), theta - 60)
+    theta_i = (theta - 60) % 360
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
     
 def possible_node(node):
     x, y, theta = node
-    new_node = []
-    action_set = {movement_1:1,
-                  movement_2:1,
-                  movement_3:1,
-                  movement_4:1,
-                  movement_5:1}
-
     new_nodes = []
+    action_set = {movement_1:step_size,
+                  movement_2:step_size,
+                  movement_3:step_size,
+                  movement_4:step_size,
+                  movement_5:step_size}
+    rows, columns, _ = Graph_map.shape
     for action, cost in action_set.items():
-        new_node = action(node)
+        new_node = action(node, step_size)
+        cost = step_size
         next_x, next_y, new_theta = new_node
-        if next_x >= 0 and next_x < 1200 and next_y >= 0 and next_y < 500 and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]):
-            if new_node not in new_nodes:
-                new_nodes.append((cost, new_node))
-
+        if 0 <= next_x <= columns and 0 <= next_y < rows and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]) and not is_visited(new_node):
+            new_nodes.append((cost, new_node))
     return new_nodes
 
-def heuristc(node, goal):
-    x1, y1, _ = node
-    x2, y2, _ = goal
-    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+def heuristic(node, goal):
+    return np.sqrt((node[0] - goal[0])**2 + (node[1] - goal[1])**2)
 
 def A_star(start_node, goal_node):
     parent = {}
     cost_list = {start_node:0}
     closed_list = set()
     open_list = PriorityQueue()
-    open_list.put((0, start_node))
+    open_list.put(((0 + heuristic(start_node, goal_node)), start_node))
     map_visualization = np.copy(Graph_map)
+    mark_visited(start_node)
     step_count = 0 
-    visted_nodes(start_node)
+    
     
     while not open_list.empty():
-        current = open_list.get()
-        current_cost, current_node = current
+        current_cost, current_node = open_list.get()
+        
         closed_list.add(current_node)
-        if heuristc(current_node, goal_node) < 1.5:
+        
+        if heuristic(current_node, goal_node) < 1.5:
             path = A_star_Backtracting(parent, start_node, current_node, map_visualization, step_count)
             for _ in range(30):
-                output.write(map_visualization)
+               output.write(map_visualization)
             break
-        
+            
+            
         for cost, new_node in possible_node(current_node):
-            cost_to_come = current_cost + cost
-            if new_node in closed_list and visited(new_node):
-                continue
+            cost_to_come = cost_list[current_node] + cost
             if new_node not in cost_list or cost_to_come < cost_list[new_node]:
                 cost_list[new_node] = cost_to_come
                 parent[new_node] = current_node
-                cost_total = cost_to_come + heuristc(new_node, goal_node) 
+                cost_total = cost_to_come + heuristic(new_node, goal_node) 
                 open_list.put((cost_total, new_node))
+                mark_visited(new_node)
                 cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (255, 0, 0), 1)
-                if step_count % 100000 == 0:
+                if step_count % 2000 == 0:
                     output.write(map_visualization)
                 step_count += 1
     
     output.release()
     return None
 
-def visted_nodes(node):
+def get_matrix_indices(node):
     x, y, theta = node
-    a = int(x/0.5)
-    b = int(y/0.5)
-    c = int(theta/30) % 12
-    G[a][b][c] = 1
+    i = int(2 * y)  # Convert y to index, threshold 0.5 units
+    j = int(2 * x)  # Convert x to index, threshold 0.5 units
+    k = int(theta / 30) % 12  # Convert theta to index, threshold 30 degrees
+    return i, j, k
 
-def visited(node):
-    x, y, theta = node
-    a = int(x/0.5)
-    b = int(y/0.5)
-    c = int(theta/30) % 12
-    return G[a][b][c] == 1
+def mark_visited(node):
+    i, j, k = get_matrix_indices(node)
+    if 0 <= i < 1000 and 0 <= j < 2400: 
+        G[i, j, k] = 1
 
+def is_visited(node):
+    i, j, k = get_matrix_indices(node)
+    return G[i, j, k] == 1
 
 def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_count):
     path = [end_node] # Adding end node to the path
@@ -200,15 +201,18 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         end_node = parent[end_node] # The parent of end node becomes the current node.
     path.reverse()
     for j in range(1, len(path)):
-        start_point = (int(path[j - 1][0]), int(500 - path[j - 1][1]))
-        end_point = (int(path[j][0]), int(500 - path[j][1]))
-        cv2.line(map_visualization, start_point, end_point, (0, 0, 255), thickness=2)  # Drawing lines to explore the path.
+        cv2.line(map_visualization, int(path[j - 1]), int(path[j]), (0, 0, 255), thickness=2) # Drawing lines to explore the path.
         if step_count % 15 == 0:
             output.write(map_visualization)
         step_count += 1
     return path
 
-start_node = (200,50,0)
+start_node = (200, 50, 0)
 goal_node = (1150, 450, 0)
 
+start_time = time.time()   # Starting to check the runtime.
 path = A_star(start_node, goal_node)
+end_time = time.time()    # end of runtime
+print(f'Runtime : {end_time-start_time}, seconds') # Printing the Runtime.
+                
+
