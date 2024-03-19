@@ -7,7 +7,7 @@ import time
 # Creating a empty space for drawing graph.
 Graph_map = np.ones((500, 1200, 3), dtype=np.uint8)*255
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
-step_size = 1
+step_size = 5
 # Center of the hexagon.
 center_h = (650,250)
 # Side of hexagon.
@@ -171,7 +171,7 @@ def A_star(start_node, goal_node):
                 open_list.put((cost_total, new_node))
                 mark_visited(new_node)
                 cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (255, 0, 0), 1)
-                if step_count % 2000 == 0:
+                if step_count % 5000 == 0:
                     output.write(map_visualization)
                 step_count += 1
     
@@ -200,15 +200,16 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         path.append(parent[end_node])
         end_node = parent[end_node] # The parent of end node becomes the current node.
     path.reverse()
-    for j in range(1, len(path)):
-        cv2.line(map_visualization, int(path[j - 1]), int(path[j]), (0, 0, 255), thickness=2) # Drawing lines to explore the path.
-        if step_count % 15 == 0:
-            output.write(map_visualization)
-        step_count += 1
+    for i in range(len(path) - 1):
+        start_point = (int(path[i][0]), int(path[i][1]))  # Convert coordinates for visualization
+        end_point = (int(path[i + 1][0]), int(path[i + 1][1]))
+        cv2.arrowedLine(map_visualization, start_point, end_point, (0, 0, 255), 1, tipLength=0.3)
+        if step_count % 10 == 0:
+            output.write(map_visualization)    
     return path
 
-start_node = (200, 50, 0)
-goal_node = (1150, 450, 0)
+start_node = (6, 6, 0)
+goal_node = (1190, 490, 0)
 
 start_time = time.time()   # Starting to check the runtime.
 path = A_star(start_node, goal_node)
