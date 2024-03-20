@@ -12,66 +12,61 @@ Graph_map = np.ones((height, width, 3), dtype=np.uint8)*255
 
 ## Taking input from the user for start and goal nodes.
 # User  input for x and y coordinates of start node.
-def start_node(width, height, canvas):
-    while True:
-        try:
-            Xs = int(input("Enter the x-coordinate of the start node(Xs): "))
-            start_y = int(input("Enter the y-coordinate of the start node(Ys): "))
-            Ys = height - start_y
-            start_theta = int(input("Enter the angle of the start_node: "))
-            
-            if Xs < 0 or Xs >= width or Ys < 0 or Ys >= height:
-                print("The x and y coordinates of the start node is out of range.Try again!!!")
-            elif np.any(canvas[Ys, Xs] != [255, 255,255]):
-                print("The x or y or both coordinates of the start node is on the obstacle.Try again!!!")
-            elif start_theta % 30 != 0:
-                print("The angle of the start node is out of range.Try again!!!")
-            else:
-                return Xs, Ys, start_theta
-        except ValueError:
-            print("The x and y coordinates of the start node is not a number. Try again!!!")
+while True:
+    Xs = int(input("Enter the x-coordinate of the start node(Xs): "))
+    start_y = int(input("Enter the y-coordinate of the start node(Yg): "))
+    Ys = height - start_y
+    
+    if Xs < 0 or Xs >= width or Ys < 0 or Ys >= height:
+        print("The x and y coordinates of the start node is out of range.Try again!!!")
+    elif np.any(Graph_map[Ys, Xs] != [255, 255,255]):
+        print("The x and y coordinates of the start node is on the obstacle.Try again!!!")
+    break
+
+# User input for x coordinate of goal node.
+while True:
+    Xg = int(input("Enter the x-coordinate of the goal node(Xg): "))
+    goal_y = int(input("Enter the y-coordinate of the goal node(Yg): "))
+    Yg = height - goal_y
+    
+    if Xg < 0 or Xg >= width or Yg < 0 or Yg >= height:
+        print("The x and y coordinates of the goal node is out of range.Try again!!!")
+    elif np.any(Graph_map[Yg,Xg] != [255,255,255]):
+        print("The x and y coordinates of the goal node is on the obstacle.Try again!!!")
+    break
+
+
+
+# User input for angle of the robot for start and goal.
+while True:
+    start_theta = int(input("Enter the angle of the start: "))
+    goal_theta = int(input("Enter the angle of the goal: "))
+    
+    if start_theta % 30 == 0:
+        break
+    else:
+        print("The angle of the start node is out of range.Try again!!!")
+    if goal_theta % 30 == 0:
+        break
+    else:
+        print("The angle of the goal node is out of range.Try again!!!")
         
-
-def goal_node(width, height, canvas):
-    while True:
-        try:
-            Xg = int(input("Enter the x-coordinate of the goal node(Xg): "))
-            goal_y = int(input("Enter the y-coordinate of the goal node(Yg): "))
-            Yg = height - goal_y
-            goal_theta = int(input("Enter the angle of the goal node: "))
-            
-            if Xg < 0 or Xg >= width or Yg < 0 or Yg >= height:
-                print("The x and y coordinates of the goal node is out of range.Try again!!!")
-            elif np.any(canvas[Yg,Xg] != [255,255,255]):
-                print("The x or y or both coordinates of the goal node is on the obstacle.Try again!!!")
-            elif goal_theta % 30 != 0:
-                print("The angle of the goal node is out of range.Try again!!!")
-            else:
-                return Xg, Yg, goal_theta
-        except ValueError:
-            print("The x and y coordinates of the goal node is not a number. Try again!!!")
-
 # User input for step size.
-def step_size_function():
-    while True:
-        try:
-            step_size = int(input("Enter the step size between 1 and 10: "))
-            if 1 <= step_size <= 10:
-                return step_size
-            else:
-                print("The step size is not between 1 and 10. Try again!!.")
-        except ValueError:
-            print("The step size is not a number. Try again!!!")
-            
+while True:
+  step_size = int(input("Enter the step size between 1 and 10: "))
+  if 1 <= step_size <= 10:
+    break
+  else:
+    print("The step size is not between 1 and 10. Try again!!.")
+        
 # User input for radius of the robot.
 radius_of_robot = int(input("Enter the radius of the robot: "))
 clearance = int(input("Enter the clearance of the robot: "))
-step_size = step_size_function()
 Total_clearance = radius_of_robot + clearance
 
 # Start and goal nodes.
-#start_node = (Xs, Ys, start_theta)
-#goal_node = (Xg, Yg, goal_theta)
+start_node = (Xs, Ys, start_theta)
+goal_node = (Xg, Yg, goal_theta)
 
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
 # Center of the hexagon.
@@ -245,7 +240,7 @@ def A_star(start_node, goal_node):
                 cost_total = cost_to_come + heuristic(new_node, goal_node) 
                 open_list.put((cost_total, new_node))
                 mark_visited(new_node)
-                cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1, tipLength=0.3)
+                cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1)
                 if step_count % 5000 == 0:
                     output.write(map_visualization)
                 step_count += 1
@@ -282,16 +277,12 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
     for i in range(len(path) - 1):
         start_point = (int(path[i][0]), int(path[i][1]))  # Convert coordinates for visualization
         end_point = (int(path[i + 1][0]), int(path[i + 1][1]))
-        cv2.arrowedLine(map_visualization, start_point, end_point, (0, 255, 255), 1, tipLength=0.3)
+        cv2.arrowedLine(map_visualization, start_point, end_point, (0, 255, 255), 3, tipLength=1)
         if step_count % 10 == 0:
             output.write(map_visualization)    
     return path
 
 start_time = time.time()   # Starting to check the runtime.
-Xs, Ys, start_theta = start_node(width, height, Graph_map)
-Xg, Yg, goal_theta = goal_node(width, height, Graph_map)
-start_node = (Xs, Ys, start_theta)
-goal_node = (Xg, Yg, goal_theta)
 path = A_star(start_node, goal_node)
 end_time = time.time()    # end of runtime
 print(f'Runtime : {end_time-start_time}, seconds') # Printing the Runtime.
