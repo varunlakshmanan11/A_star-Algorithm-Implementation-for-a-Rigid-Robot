@@ -7,66 +7,71 @@ import time
 # Creating a empty space for drawing graph.
 height = 500
 width = 1200
-
+orientations = 12
 Graph_map = np.ones((height, width, 3), dtype=np.uint8)*255
 
 ## Taking input from the user for start and goal nodes.
 # User  input for x and y coordinates of start node.
-while True:
-    Xs = int(input("Enter the x-coordinate of the start node(Xs): "))
-    start_y = int(input("Enter the y-coordinate of the start node(Yg): "))
-    Ys = height - start_y
-    
-    if Xs < 0 or Xs >= width or Ys < 0 or Ys >= height:
-        print("The x and y coordinates of the start node is out of range.Try again!!!")
-    elif np.any(Graph_map[Ys, Xs] != [255, 255,255]):
-        print("The x and y coordinates of the start node is on the obstacle.Try again!!!")
-    break
-
-# User input for x coordinate of goal node.
-while True:
-    Xg = int(input("Enter the x-coordinate of the goal node(Xg): "))
-    goal_y = int(input("Enter the y-coordinate of the goal node(Yg): "))
-    Yg = height - goal_y
-    
-    if Xg < 0 or Xg >= width or Yg < 0 or Yg >= height:
-        print("The x and y coordinates of the goal node is out of range.Try again!!!")
-    elif np.any(Graph_map[Yg,Xg] != [255,255,255]):
-        print("The x and y coordinates of the goal node is on the obstacle.Try again!!!")
-    break
-
-
-
-# User input for angle of the robot for start and goal.
-while True:
-    start_theta = int(input("Enter the angle of the start: "))
-    goal_theta = int(input("Enter the angle of the goal: "))
-    
-    if start_theta % 30 == 0:
-        break
-    else:
-        print("The angle of the start node is out of range.Try again!!!")
-    if goal_theta % 30 == 0:
-        break
-    else:
-        print("The angle of the goal node is out of range.Try again!!!")
+def start_node(width, height, canvas):
+    while True:
+        try:
+            Xs = int(input("Enter the x-coordinate of the start node(Xs): "))
+            start_y = int(input("Enter the y-coordinate of the start node(Ys): "))
+            Ys = height - start_y
+            start_theta = int(input("Enter the angle of the start_node: "))
+            
+            if Xs < 0 or Xs >= width or Ys < 0 or Ys >= height:
+                print("The x and y coordinates of the start node is out of range.Try again!!!")
+            elif np.any(canvas[Ys, Xs] != [255, 255,255]):
+                print("The x or y or both coordinates of the start node is on the obstacle.Try again!!!")
+            elif start_theta % 30 != 0:
+                print("The angle of the start node is out of range.Try again!!!")
+            else:
+                return Xs, Ys, start_theta
+        except ValueError:
+            print("The x and y coordinates of the start node is not a number. Try again!!!")
         
+
+def goal_node(width, height, canvas):
+    while True:
+        try:
+            Xg = int(input("Enter the x-coordinate of the goal node(Xg): "))
+            goal_y = int(input("Enter the y-coordinate of the goal node(Yg): "))
+            Yg = height - goal_y
+            goal_theta = int(input("Enter the angle of the goal node: "))
+            
+            if Xg < 0 or Xg >= width or Yg < 0 or Yg >= height:
+                print("The x and y coordinates of the goal node is out of range.Try again!!!")
+            elif np.any(canvas[Yg,Xg] != [255,255,255]):
+                print("The x or y or both coordinates of the goal node is on the obstacle.Try again!!!")
+            elif goal_theta % 30 != 0:
+                print("The angle of the goal node is out of range.Try again!!!")
+            else:
+                return Xg, Yg, goal_theta
+        except ValueError:
+            print("The x and y coordinates of the goal node is not a number. Try again!!!")
+
 # User input for step size.
-while True:
-  step_size = int(input("Enter the step size between 1 and 10: "))
-  if 1 <= step_size <= 10:
-    break
-  else:
-    print("The step size is not between 1 and 10. Try again!!.")
-        
+def step_size_function():
+    while True:
+        try:
+            step_size = int(input("Enter the step size between 1 and 10: "))
+            if 1 <= step_size <= 10:
+                return step_size
+            else:
+                print("The step size is not between 1 and 10. Try again!!.")
+        except ValueError:
+            print("The step size is not a number. Try again!!!")
+            
 # User input for radius of the robot.
 radius_of_robot = int(input("Enter the radius of the robot: "))
 clearance = int(input("Enter the clearance of the robot: "))
+step_size = step_size_function()
 Total_clearance = radius_of_robot + clearance
 
 # Start and goal nodes.
-start_node = (Xs, Ys, start_theta)
-goal_node = (Xg, Yg, goal_theta)
+#start_node = (Xs, Ys, start_theta)
+#goal_node = (Xg, Yg, goal_theta)
 
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
 # Center of the hexagon.
@@ -155,14 +160,14 @@ output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (wid
 # Creating Action sets.
 def movement_1(node, step_size):
     x, y, theta = node
-    new_node = (x + step_size * np.cos(np.radians(theta)), y + np.sin(np.radians(theta)), theta)
+    new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size*np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
 
 def movement_2(node, step_size):
     x, y, theta = node
     theta_i = (theta + 30) % 360
-    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
@@ -200,32 +205,38 @@ def possible_node(node):
         new_node = action(node, step_size)
         cost = step_size
         next_x, next_y, new_theta = new_node
-        if 0 <= next_x <= columns and 0 <= next_y < rows and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]) and not is_visited(new_node):
+        if 0 <= next_x <= columns and 0 <= next_y < rows and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]) and not visited_check(new_node):
             new_nodes.append((cost, new_node))
     return new_nodes
 
 # Creating a heuristic function to calculate distance between the current node and the goal node.
-def heuristic(node, goal):
-    return np.sqrt((node[0] - goal[0])**2 + (node[1] - goal[1])**2)
+
+def heuristic(goal_node, width, height):
+    heuristic_map = np.zeros((height, width))
+    for y in range(height):
+        for x in range(width):
+            heuristic_map[y, x] = np.sqrt((x - goal_node[0])**2 + (y - goal_node[1])**2)
+    return heuristic_map
 
 # Creating a function to implement A* algorithm to find the shortest distance.
-def A_star(start_node, goal_node):
+def A_star(start_node, goal_node, heuristic_map):
     parent = {}
     cost_list = {start_node:0}
     closed_list = set()
     open_list = PriorityQueue()
-    open_list.put(((0 + heuristic(start_node, goal_node)), start_node))
+    open_list.put((0 + heuristic_map[int(start_node[1]), int(start_node[0])], start_node))
     map_visualization = np.copy(Graph_map)
-    mark_visited(start_node)
+    marking_visited(start_node)
     step_count = 0 
     
     # While loop to check the open_list is empty or not.
     while not open_list.empty():
         current_cost, current_node = open_list.get()
         closed_list.add(current_node)
+    
         
         # If the current node is equal to goal node, then it will break the loop and return the path along with writing the path to the video.
-        if heuristic(current_node, goal_node) < 1.5:
+        if heuristic_map[int(current_node[1]), int(current_node[0])] < 1.5:
             path = A_star_Backtracting(parent, start_node, current_node, map_visualization, step_count)
             for _ in range(30):
                output.write(map_visualization)
@@ -233,14 +244,14 @@ def A_star(start_node, goal_node):
         
         # If the current node is not equal to goal node, then it will check the possible nodes and add it to the open_list along with visulizing the node exploration.   
         for cost, new_node in possible_node(current_node):
-            cost_to_come = cost_list[current_node] + cost
+            cost_to_come = current_cost + cost
             if new_node not in cost_list or cost_to_come < cost_list[new_node]:
                 cost_list[new_node] = cost_to_come
                 parent[new_node] = current_node
-                cost_total = cost_to_come + heuristic(new_node, goal_node) 
+                cost_total = cost_to_come + heuristic_map[int(new_node[1]), int(new_node[0])] 
                 open_list.put((cost_total, new_node))
-                mark_visited(new_node)
-                cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1)
+                marking_visited(new_node)
+                cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1, tipLength=0.3)
                 if step_count % 5000 == 0:
                     output.write(map_visualization)
                 step_count += 1
@@ -257,13 +268,13 @@ def matrix_indices(node):
     return i, j, k
 
 # Marking the visited nodes.
-def mark_visited(node):
+def marking_visited(node):
     i, j, k = matrix_indices(node)
     if 0 <= i < 1000 and 0 <= j < 2400: 
         G[i, j, k] = 1
 
 # Checking the visited nodes.
-def is_visited(node):
+def visited_check(node):
     i, j, k = matrix_indices(node)
     return G[i, j, k] == 1
 
@@ -275,16 +286,23 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         end_node = parent[end_node] # The parent of end node becomes the current node.
     path.reverse()
     for i in range(len(path) - 1):
-        start_point = (int(path[i][0]), int(path[i][1]))  # Convert coordinates for visualization
+        start_point = (int(path[i][0]), int(path[i][1]))  # Converting the coordinates for visualization.
         end_point = (int(path[i + 1][0]), int(path[i + 1][1]))
-        cv2.arrowedLine(map_visualization, start_point, end_point, (0, 255, 255), 3, tipLength=1)
-        if step_count % 10 == 0:
+        cv2.arrowedLine(map_visualization, start_point, end_point, (255, 0, 0), 1, tipLength=0.3)
+        if step_count % 5 == 0:
             output.write(map_visualization)    
     return path
 
 start_time = time.time()   # Starting to check the runtime.
-path = A_star(start_node, goal_node)
+Xs, Ys, start_theta = start_node(width, height, Graph_map) # Getting the start node from the user
+Xg, Yg, goal_theta = goal_node(width, height, Graph_map) # Getting the goal node from the user
+
+start_node = (Xs, Ys, start_theta)
+goal_node = (Xg, Yg, goal_theta)
+
+heuristic_map = heuristic(goal_node, width, height)
+path = A_star(start_node, goal_node, heuristic_map)
 end_time = time.time()    # end of runtime
-print(f'Runtime : {end_time-start_time}, seconds') # Printing the Runtime.
+print(f'Runtime : {(end_time-start_time)/60}, Minutes') # Printing the Runtime.
                 
 

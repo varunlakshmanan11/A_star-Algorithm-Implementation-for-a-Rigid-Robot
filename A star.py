@@ -10,6 +10,8 @@ width = 1200
 
 Graph_map = np.ones((height, width, 3), dtype=np.uint8)*255
 
+heuristic_cache = {}
+
 ## Taking input from the user for start and goal nodes.
 # User  input for x and y coordinates of start node.
 def start_node(width, height, canvas):
@@ -69,11 +71,9 @@ clearance = int(input("Enter the clearance of the robot: "))
 step_size = step_size_function()
 Total_clearance = radius_of_robot + clearance
 
-# Start and goal nodes.
-#start_node = (Xs, Ys, start_theta)
-#goal_node = (Xg, Yg, goal_theta)
-
+# Creating a matrix to store the visited nodes.
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
+
 # Center of the hexagon.
 center_h = (650,250)
 # Side of hexagon.
@@ -150,45 +150,41 @@ hexagon_clearance = hexagon(x, y,clearance_verticies) & ~hexagon_original
 Graph_map[hexagon_clearance] = [0, 255, 0]
 Graph_map[hexagon_original] = [0, 0, 0]
 
-# Plotting the graph_map.
-plt.imshow(Graph_map)
-plt.show()
-
 # Creating a video file to store the output.
 output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
 
 # Creating Action sets.
 def movement_1(node, step_size):
     x, y, theta = node
-    new_node = (x + step_size * np.cos(np.radians(theta)), y + np.sin(np.radians(theta)), theta)
+    new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size * np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
 
 def movement_2(node, step_size):
     x, y, theta = node
     theta_i = (theta + 30) % 360
-    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
 def movement_3(node, step_size):
     x, y, theta = node
     theta_i = (theta + 60) % 360
-    new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
 def movement_4(node, step_size):
     x, y, theta = node
     theta_i = (theta - 30) % 360
-    new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta 
 
 def movement_5(node, step_size):
     x, y, theta = node
     theta_i = (theta - 60) % 360
-    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
@@ -205,13 +201,18 @@ def possible_node(node):
         new_node = action(node, step_size)
         cost = step_size
         next_x, next_y, new_theta = new_node
-        if 0 <= next_x <= columns and 0 <= next_y < rows and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]) and not is_visited(new_node):
+        if 0 <= next_x <= columns and 0 <= next_y < rows and np.all(Graph_map[int(next_y), int(next_x)] == [255, 255, 255]) and not visited_check(new_node):
             new_nodes.append((cost, new_node))
     return new_nodes
 
 # Creating a heuristic function to calculate distance between the current node and the goal node.
 def heuristic(node, goal):
-    return np.sqrt((node[0] - goal[0])**2 + (node[1] - goal[1])**2)
+    if node in heuristic_cache:
+        return heuristic_cache[node]
+    else:
+        heuristic_value = np.sqrt((node[0] - goal[0])**2 + (node[1] - goal[1])**2)
+        heuristic_cache[node] = heuristic_value
+        return heuristic_value
 
 # Creating a function to implement A* algorithm to find the shortest distance.
 def A_star(start_node, goal_node):
@@ -221,7 +222,7 @@ def A_star(start_node, goal_node):
     open_list = PriorityQueue()
     open_list.put(((0 + heuristic(start_node, goal_node)), start_node))
     map_visualization = np.copy(Graph_map)
-    mark_visited(start_node)
+    marking_visited(start_node)
     step_count = 0 
     
     # While loop to check the open_list is empty or not.
@@ -244,7 +245,7 @@ def A_star(start_node, goal_node):
                 parent[new_node] = current_node
                 cost_total = cost_to_come + heuristic(new_node, goal_node) 
                 open_list.put((cost_total, new_node))
-                mark_visited(new_node)
+                marking_visited(new_node)
                 cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1, tipLength=0.3)
                 if step_count % 5000 == 0:
                     output.write(map_visualization)
@@ -262,13 +263,13 @@ def matrix_indices(node):
     return i, j, k
 
 # Marking the visited nodes.
-def mark_visited(node):
+def marking_visited(node):
     i, j, k = matrix_indices(node)
     if 0 <= i < 1000 and 0 <= j < 2400: 
         G[i, j, k] = 1
 
 # Checking the visited nodes.
-def is_visited(node):
+def visited_check(node):
     i, j, k = matrix_indices(node)
     return G[i, j, k] == 1
 
@@ -280,20 +281,22 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         end_node = parent[end_node] # The parent of end node becomes the current node.
     path.reverse()
     for i in range(len(path) - 1):
-        start_point = (int(path[i][0]), int(path[i][1]))  # Convert coordinates for visualization
+        start_point = (int(path[i][0]), int(path[i][1]))  # Converting the coordinates for visualization.
         end_point = (int(path[i + 1][0]), int(path[i + 1][1]))
-        cv2.arrowedLine(map_visualization, start_point, end_point, (0, 255, 255), 1, tipLength=0.3)
-        if step_count % 10 == 0:
+        cv2.arrowedLine(map_visualization, start_point, end_point, (255, 0, 0), 1, tipLength=0.3)
+        if step_count % 5 == 0:
             output.write(map_visualization)    
     return path
 
-start_time = time.time()   # Starting to check the runtime.
-Xs, Ys, start_theta = start_node(width, height, Graph_map)
-Xg, Yg, goal_theta = goal_node(width, height, Graph_map)
+Xs, Ys, start_theta = start_node(width, height, Graph_map) # Getting the start node from the user
+Xg, Yg, goal_theta = goal_node(width, height, Graph_map) # Getting the goal node from the user
+
 start_node = (Xs, Ys, start_theta)
 goal_node = (Xg, Yg, goal_theta)
+
+start_time = time.time()   # Starting to check the runtime.
 path = A_star(start_node, goal_node)
 end_time = time.time()    # end of runtime
-print(f'Runtime : {end_time-start_time}, seconds') # Printing the Runtime.
+print(f'Runtime : {(end_time-start_time)/60}, Minutes') # Printing the Runtime.
                 
 
