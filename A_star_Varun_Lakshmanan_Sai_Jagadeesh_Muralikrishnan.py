@@ -156,7 +156,7 @@ Graph_map[hexagon_original] = [0, 0, 0]
 output = cv2.VideoWriter('A_star_Varun_Lakshmanan_Sai_Jagadeesh_Muralikrishnan.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
 
 #-----------------------------------------Creating the Action sets---------------------------------#
-# Move straight forwarD
+# Move straight forward
 def movement_1(node, step_size):
     x, y, theta = node
     new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size * np.sin(np.radians(theta)), theta)
