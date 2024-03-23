@@ -36,15 +36,31 @@ Ensure you have Python installed on your system. Then, run the following command
 
 * Error Handling: Anyway the script validates the inputs and prompts for re-entry if the specified nodes are inside an obstacle, outside canvas bounds, or not valid integers.
 
-* For example:
+* For example, we have used the below inputs for the visualization video submitted:
 
-Enter the x-coordinate of the start node(Xs): 20
-Enter the y-coordinate of the start node(Ys): 450
-Enter the angle of the start_node: 30
+Enter the radius of the robot: 5
 
-Enter the x-coordinate of the goal node(Xg): 1190
-Enter the y-coordinate of the goal node(Yg): 45
-Enter the angle of the goal node: 60
+Enter the clearance of the robot: 5
+
+Enter the step size between 1 and 10(inclusive): 10
+
+Enter the x-coordinate of the start node(Xs): 11
+
+Enter the y-coordinate of the start node(Ys): 11
+
+Enter the angle of the start_node: 0
+
+Enter the x-coordinate of the goal node(Xg): 1189
+
+Enter the y-coordinate of the goal node(Yg): 489
+
+Enter the angle of the goal node: 0
+
+* Output and run time
+ - a video file named A_star_Varun_Lakshmanan_Sai_Jagadeesh_Muralikrishnan.mp4 will be generated with optimal path and explored nodes
+ - Runtime : 0.77 Minutes
+
+ * Feel free to use different orientations and nodes to test the script.
 
 ## View the Visualization
 

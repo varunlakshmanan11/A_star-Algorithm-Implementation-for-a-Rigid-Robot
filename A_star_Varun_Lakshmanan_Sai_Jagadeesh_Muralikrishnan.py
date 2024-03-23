@@ -56,7 +56,7 @@ def goal_node(width, height, canvas):
 def step_size_function():
     while True:
         try:
-            step_size = int(input("Enter the step size between 1 and 10: "))
+            step_size = int(input("Enter the step size between 1 and 10(inclusive): "))
             if 1 <= step_size <= 10:
                 return step_size
             else:
@@ -320,6 +320,6 @@ else:
     print("Path found")
 
 end_time = time.time()    # end of runtime
-print(f'Runtime : {((end_time-start_time)/60):.2f}, Minutes')
+print(f'Runtime : {((end_time-start_time)/60):.2f} Minutes')
 
 #--------------------------------------------------End of the Program-------------------------------------------------#
