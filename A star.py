@@ -257,8 +257,8 @@ def A_star(start_node, goal_node):
 # Getting the indices of the matrix.
 def matrix_indices(node):
     x, y, theta = node
-    i = int(2 * y)  
-    j = int(2 * x)  
+    i = round(int(2 * y))  
+    j = round(int(2 * x))  
     k = int(theta / 30) % 12  
     return i, j, k
 

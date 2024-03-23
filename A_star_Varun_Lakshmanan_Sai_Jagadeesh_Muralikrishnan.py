@@ -7,8 +7,10 @@ import time
 # Creating a empty space for drawing graph.
 height = 500
 width = 1200
-orientations = 12
+
 Graph_map = np.ones((height, width, 3), dtype=np.uint8)*255
+
+heuristic_cache = {}
 
 ## Taking input from the user for start and goal nodes.
 # User  input for x and y coordinates of start node.
@@ -69,11 +71,9 @@ clearance = int(input("Enter the clearance of the robot: "))
 step_size = step_size_function()
 Total_clearance = radius_of_robot + clearance
 
-# Start and goal nodes.
-#start_node = (Xs, Ys, start_theta)
-#goal_node = (Xg, Yg, goal_theta)
-
+# Creating a matrix to store the visited nodes.
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
+
 # Center of the hexagon.
 center_h = (650,250)
 # Side of hexagon.
@@ -150,45 +150,41 @@ hexagon_clearance = hexagon(x, y,clearance_verticies) & ~hexagon_original
 Graph_map[hexagon_clearance] = [0, 255, 0]
 Graph_map[hexagon_original] = [0, 0, 0]
 
-# Plotting the graph_map.
-plt.imshow(Graph_map)
-plt.show()
-
 # Creating a video file to store the output.
 output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
 
 # Creating Action sets.
 def movement_1(node, step_size):
     x, y, theta = node
-    new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size*np.sin(np.radians(theta)), theta)
+    new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size * np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
 
 def movement_2(node, step_size):
     x, y, theta = node
     theta_i = (theta + 30) % 360
-    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
 def movement_3(node, step_size):
     x, y, theta = node
     theta_i = (theta + 60) % 360
-    new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
 def movement_4(node, step_size):
     x, y, theta = node
     theta_i = (theta - 30) % 360
-    new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta 
 
 def movement_5(node, step_size):
     x, y, theta = node
     theta_i = (theta - 60) % 360
-    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size*np.sin(np.radians(theta_i)), theta_i)
+    new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
 
@@ -210,21 +206,21 @@ def possible_node(node):
     return new_nodes
 
 # Creating a heuristic function to calculate distance between the current node and the goal node.
-
-def heuristic(goal_node, width, height):
-    heuristic_map = np.zeros((height, width))
-    for y in range(height):
-        for x in range(width):
-            heuristic_map[y, x] = np.sqrt((x - goal_node[0])**2 + (y - goal_node[1])**2)
-    return heuristic_map
+def heuristic(node, goal):
+    if node in heuristic_cache:
+        return heuristic_cache[node]
+    else:
+        heuristic_value = np.sqrt((node[0] - goal[0])**2 + (node[1] - goal[1])**2)
+        heuristic_cache[node] = heuristic_value
+        return heuristic_value
 
 # Creating a function to implement A* algorithm to find the shortest distance.
-def A_star(start_node, goal_node, heuristic_map):
+def A_star(start_node, goal_node):
     parent = {}
     cost_list = {start_node:0}
     closed_list = set()
     open_list = PriorityQueue()
-    open_list.put((0 + heuristic_map[int(start_node[1]), int(start_node[0])], start_node))
+    open_list.put(((0 + heuristic(start_node, goal_node)), start_node))
     map_visualization = np.copy(Graph_map)
     marking_visited(start_node)
     step_count = 0 
@@ -233,10 +229,9 @@ def A_star(start_node, goal_node, heuristic_map):
     while not open_list.empty():
         current_cost, current_node = open_list.get()
         closed_list.add(current_node)
-    
         
         # If the current node is equal to goal node, then it will break the loop and return the path along with writing the path to the video.
-        if heuristic_map[int(current_node[1]), int(current_node[0])] < 1.5:
+        if heuristic(current_node, goal_node) < 1.5:
             path = A_star_Backtracting(parent, start_node, current_node, map_visualization, step_count)
             for _ in range(30):
                output.write(map_visualization)
@@ -244,11 +239,11 @@ def A_star(start_node, goal_node, heuristic_map):
         
         # If the current node is not equal to goal node, then it will check the possible nodes and add it to the open_list along with visulizing the node exploration.   
         for cost, new_node in possible_node(current_node):
-            cost_to_come = current_cost + cost
+            cost_to_come = cost_list[current_node] + cost
             if new_node not in cost_list or cost_to_come < cost_list[new_node]:
                 cost_list[new_node] = cost_to_come
                 parent[new_node] = current_node
-                cost_total = cost_to_come + heuristic_map[int(new_node[1]), int(new_node[0])] 
+                cost_total = cost_to_come + heuristic(new_node, goal_node) 
                 open_list.put((cost_total, new_node))
                 marking_visited(new_node)
                 cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1, tipLength=0.3)
@@ -262,8 +257,8 @@ def A_star(start_node, goal_node, heuristic_map):
 # Getting the indices of the matrix.
 def matrix_indices(node):
     x, y, theta = node
-    i = int(2 * y)  
-    j = int(2 * x)  
+    i = round(int(2 * y))  
+    j = round(int(2 * x))  
     k = int(theta / 30) % 12  
     return i, j, k
 
@@ -293,15 +288,14 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
             output.write(map_visualization)    
     return path
 
-start_time = time.time()   # Starting to check the runtime.
 Xs, Ys, start_theta = start_node(width, height, Graph_map) # Getting the start node from the user
 Xg, Yg, goal_theta = goal_node(width, height, Graph_map) # Getting the goal node from the user
 
 start_node = (Xs, Ys, start_theta)
 goal_node = (Xg, Yg, goal_theta)
 
-heuristic_map = heuristic(goal_node, width, height)
-path = A_star(start_node, goal_node, heuristic_map)
+start_time = time.time()   # Starting to check the runtime.
+path = A_star(start_node, goal_node)
 end_time = time.time()    # end of runtime
 print(f'Runtime : {(end_time-start_time)/60}, Minutes') # Printing the Runtime.
                 
