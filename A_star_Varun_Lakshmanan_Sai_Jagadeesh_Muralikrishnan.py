@@ -63,7 +63,17 @@ def step_size_function():
                 print("The step size is not between 1 and 10. Try again!!.")
         except ValueError:
             print("The step size is not a number. Try again!!!")
-            
+
+def print_a_star_ascii():
+    print("""
+    ___                _____  __                                __   __       ____ _             __           
+   /   |              / ___/ / /_ ____ _ _____   ____   ____ _ / /_ / /_     / __/(_)____   ____/ /___   _____
+  / /| |    ______    \__ \ / __// __ `// ___/  / __ \ / __ `// __// __ \   / /_ / // __ \ / __  // _ \ / ___/
+ / ___ |   /_____/   ___/ // /_ / /_/ // /     / /_/ // /_/ // /_ / / / /  / __// // / / // /_/ //  __// /    
+/_/  |_|            /____/ \__/ \__,_//_/     / .___/ \__,_/ \__//_/ /_/  /_/  /_//_/ /_/ \__,_/ \___//_/     
+                                             /_/                                                                  """)
+
+print_a_star_ascii()
 # User input for radius of the robot.
 radius_of_robot = int(input("Enter the radius of the robot: "))
 clearance = int(input("Enter the clearance of the robot: "))
@@ -159,7 +169,7 @@ output = cv2.VideoWriter('A_star_Varun_Lakshmanan_Sai_Jagadeesh_Muralikrishnan.m
 # Move straight forward
 def movement_1(node, step_size):
     x, y, theta = node
-    new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size * np.sin(np.radians(theta)), theta)
+    new_node = (int(x + step_size * np.cos(np.radians(theta))), y + step_size * np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
 # Move 30 degrees to the right
@@ -233,11 +243,11 @@ def A_star(start_node, goal_node):
         closed_list.add(current_node)
         
         # If the current node is equal to goal node, then it will break the loop and return the path along with writing the path to the video.
-        if heuristic(current_node, goal_node) < 1.5:
+        if heuristic(current_node, goal_node) < 1.5 and current_node[2] == goal_node[2]:
             path = A_star_Backtracting(parent, start_node, current_node, map_visualization, step_count)
-            for _ in range(30):
+            for _ in range(80):
                output.write(map_visualization)
-            break
+            return path
         
         # If the current node is not equal to goal node, then it will check the possible nodes and add it to the open_list along with visulizing the node exploration.   
         for cost, new_node in possible_node(current_node):
@@ -289,9 +299,10 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
         end_point = (int(path[i + 1][0]), int(path[i + 1][1]))
         cv2.arrowedLine(map_visualization, start_point, end_point, (255, 0, 0), 1, tipLength=0.3)
         if step_count % 5 == 0:
-            output.write(map_visualization)    
+            output.write(map_visualization)
+        step_count += 1 
     return path
-
+    
 Xs, Ys, start_theta = start_node(width, height, Graph_map) # Getting the start node from the user
 Xg, Yg, goal_theta = goal_node(width, height, Graph_map) # Getting the goal node from the user
 
@@ -302,7 +313,13 @@ goal_node = (Xg, Yg, goal_theta)
 
 start_time = time.time()   # Starting to check the runtime.
 path = A_star(start_node, goal_node)
+
+if path is None:
+    print("No optimal path found")
+else:
+    print("Path found")
+
 end_time = time.time()    # end of runtime
-print(f'Runtime : {(end_time-start_time)/60}, Minutes') # Printing the Runtime.
+print(f'Runtime : {((end_time-start_time)/60):.2f}, Minutes')
 
 #--------------------------------------------------End of the Program-------------------------------------------------#
