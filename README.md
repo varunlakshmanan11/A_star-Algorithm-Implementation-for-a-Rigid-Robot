@@ -1,6 +1,6 @@
-# ENPM 661 Project 3
+## ENPM 661 Project 3
 
-### A* Algorithm Implementation for a Point Robot
+# A* Algorithm Implementation for a Point Robot
 
 | Team Members                 | UID       |
 |------------------------------|-----------|
@@ -15,7 +15,7 @@ Ensure you have Python installed on your system. Then, run the following command
 
 * pip install numpy opencv-python
 
-# Libraries Used
+## Libraries Used
 
 * OpenCV: Utilized for visualizing the map and the path exploration process. It helps in creating a more interactive experience by showing the algorithm's step-by-step progression towards the goal.
 
