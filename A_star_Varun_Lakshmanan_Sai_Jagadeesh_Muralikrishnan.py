@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt 
 from queue import PriorityQueue
 import cv2
 import time
@@ -257,8 +256,10 @@ def A_star(start_node, goal_node):
 # Getting the indices of the matrix.
 def matrix_indices(node):
     x, y, theta = node
-    i = round(int(2 * y))  
-    j = round(int(2 * x))  
+    x = round(x)
+    y = round(y)
+    i = int(2 * y) 
+    j = int(2 * x)  
     k = int(theta / 30) % 12  
     return i, j, k
 
