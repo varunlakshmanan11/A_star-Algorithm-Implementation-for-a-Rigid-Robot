@@ -3,13 +3,13 @@ from queue import PriorityQueue
 import cv2
 import time
 
-# Creating a empty space for drawing graph.
+#--------------------------------------------------Creating the Canvas----------------------------------------------------#
 height = 500
 width = 1200
 
 Graph_map = np.ones((height, width, 3), dtype=np.uint8)*255
 
-heuristic_cache = {}
+#--------------------------------------------------Creating the User Interface-------------------------------------------------#
 
 ## Taking input from the user for start and goal nodes.
 # User  input for x and y coordinates of start node.
@@ -73,6 +73,10 @@ Total_clearance = radius_of_robot + clearance
 # Creating a matrix to store the visited nodes.
 G = np.zeros((1000, 2400, 12), dtype=np.uint8)
 
+# Creating a cache to store the heuristic values.
+heuristic_cache = {}
+
+#--------------------------------------------------Creating the Hexagon-------------------------------------------------#
 # Center of the hexagon.
 center_h = (650,250)
 # Side of hexagon.
@@ -91,8 +95,7 @@ v_y_c= c_y + radius_clearance * np.sin(angles) # y_coordinate_clearance_vertices
 vertices = np.vstack((v_x, v_y)).T # storing x and y vertices in a tuple.
 clearance_verticies = np.vstack((v_x_c, v_y_c)).T # storing clearance x and y vertices.
 
-
-# Drawaing objects on the empty_space by iterating in for loop using half plane equations.
+#---------------------------------------Creating the Rectangles using half planes-------------------------------------------------#
 for x in range(1200):
     for y in range(500):
         y_transform = 500 - y
@@ -150,44 +153,44 @@ Graph_map[hexagon_clearance] = [0, 255, 0]
 Graph_map[hexagon_original] = [0, 0, 0]
 
 # Creating a video file to store the output.
-output = cv2.VideoWriter('A_star.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
+output = cv2.VideoWriter('A_star_Varun_Lakshmanan_Sai_Jagadeesh_Muralikrishnan.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
 
-# Creating Action sets.
+#-----------------------------------------Creating the Action sets---------------------------------#
+# Move straight forwarD
 def movement_1(node, step_size):
     x, y, theta = node
     new_node = (x + step_size * np.cos(np.radians(theta)), y + step_size * np.sin(np.radians(theta)), theta)
     x, y, theta = new_node
     return x,y,theta
-
+# Move 30 degrees to the right
 def movement_2(node, step_size):
     x, y, theta = node
     theta_i = (theta + 30) % 360
     new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
-
+# Move 60 degrees to the right
 def movement_3(node, step_size):
     x, y, theta = node
     theta_i = (theta + 60) % 360
     new_node = (x + step_size* np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
-
+# Move 30 degrees to the left
 def movement_4(node, step_size):
     x, y, theta = node
     theta_i = (theta - 30) % 360
     new_node = (x + step_size*np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta 
-
+# Move 60 degrees to the left
 def movement_5(node, step_size):
     x, y, theta = node
     theta_i = (theta - 60) % 360
     new_node = (x + step_size * np.cos(np.radians(theta_i)), y + step_size * np.sin(np.radians(theta_i)), theta_i)
     x, y, theta = new_node
     return x, y, theta
-
-# Creating a function to check the possible nodes.    
+#----------------------------------Function to check the possible nodes-----------------------------#
 def possible_node(node):
     new_nodes = []
     action_set = {movement_1:step_size,
@@ -204,7 +207,7 @@ def possible_node(node):
             new_nodes.append((cost, new_node))
     return new_nodes
 
-# Creating a heuristic function to calculate distance between the current node and the goal node.
+#------------------------------------Creating the Heuristic Function--------------------------------#
 def heuristic(node, goal):
     if node in heuristic_cache:
         return heuristic_cache[node]
@@ -213,7 +216,7 @@ def heuristic(node, goal):
         heuristic_cache[node] = heuristic_value
         return heuristic_value
 
-# Creating a function to implement A* algorithm to find the shortest distance.
+#----------------------------------------- the A* Algorithm-----------------------------------------#
 def A_star(start_node, goal_node):
     parent = {}
     cost_list = {start_node:0}
@@ -252,7 +255,7 @@ def A_star(start_node, goal_node):
     
     output.release()
     return None
-
+#-------------------------Creating the Matrix using second method----------------------------------#
 # Getting the indices of the matrix.
 def matrix_indices(node):
     x, y, theta = node
@@ -274,7 +277,7 @@ def visited_check(node):
     i, j, k = matrix_indices(node)
     return G[i, j, k] == 1
 
-# Creating a function to backtracK the path. 
+#---------------------------Creating the Backtracking Function--------------------------------------#
 def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_count):
     path = [end_node] # Adding end node to the path
     while end_node != start_node: # If the end node is not equal to start_node, parent of the end_node is added to path and continues.
@@ -292,6 +295,8 @@ def A_star_Backtracting(parent, start_node, end_node, map_visualization, step_co
 Xs, Ys, start_theta = start_node(width, height, Graph_map) # Getting the start node from the user
 Xg, Yg, goal_theta = goal_node(width, height, Graph_map) # Getting the goal node from the user
 
+
+#--------------------------------------Initializing the nodes------------------------------------#
 start_node = (Xs, Ys, start_theta)
 goal_node = (Xg, Yg, goal_theta)
 
@@ -299,5 +304,5 @@ start_time = time.time()   # Starting to check the runtime.
 path = A_star(start_node, goal_node)
 end_time = time.time()    # end of runtime
 print(f'Runtime : {(end_time-start_time)/60}, Minutes') # Printing the Runtime.
-                
 
+#--------------------------------------------------End of the Program-------------------------------------------------#
