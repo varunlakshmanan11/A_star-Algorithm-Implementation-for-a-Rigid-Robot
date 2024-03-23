@@ -18,13 +18,13 @@ Ensure you have Python installed on your system. Then, run the following command
 
 ## Libraries Used
 
-* OpenCV: Utilized for visualizing the map and the path exploration process. It helps in creating a more interactive experience by showing the algorithm's step-by-step progression towards the goal.
+* OpenCV: Utilized for visualizing the map and the path exploration process.
 
-* NumPy: A fundamental package for scientific computing in Python. It's used here for algebraic operations, defining the map's layout, and identifying free spaces within it.
+* NumPy: It's used here for algebraic operations, defining the map's layout, and identifying free spaces within it and also used for defining the action set.
 
-* Time: This library is used to calculate and display the runtime of the pathfinding process, providing insight into the algorithm's efficiency.
+* Time: This library is used to calculate and display the runtime of the pathfinding process.
 
-* PriorityQueue from queue: Employs a priority queue to effectively manage nodes based on their overall cost (distance from the start node plus the heuristic estimate), ensuring the algorithm always proceeds along the most promising path.
+* PriorityQueue from queue: Employs a priority queue to effectively manage nodes based on their overall cost (distance from the start node plus the heuristic estimate), ensuring the algorithm always proceeds along the most optimal path.
 
 
 ## Input Start and Goal Nodes
@@ -37,7 +37,7 @@ Ensure you have Python installed on your system. Then, run the following command
 
 * Error Handling: Anyway the script validates the inputs and prompts for re-entry if the specified nodes are inside an obstacle, outside canvas bounds, or not valid integers.
 
-* For example, we have used the below inputs for the visualization video submitted:
+* we have used the below inputs for the visualization of the path:
 
 Enter the radius of the robot: 5
 

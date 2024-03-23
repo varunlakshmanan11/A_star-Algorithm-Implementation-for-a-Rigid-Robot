@@ -259,7 +259,7 @@ def A_star(start_node, goal_node):
                 open_list.put((cost_total, new_node))
                 marking_visited(new_node)
                 cv2.arrowedLine(map_visualization, (int(current_node[0]), int(current_node[1])), (int(new_node[0]), int(new_node[1])), (0, 0, 255), 1, tipLength=0.3)
-                if step_count % 5000 == 0:
+                if step_count % 2000 == 0:
                     output.write(map_visualization)
                 step_count += 1
     
