@@ -1,9 +1,9 @@
 # A* Algorithm Implementation for a Rigid Robot
 
-| Team Members                 | UID       | Directory ID |
-|------------------------------|-----------|--------------|
-| Sai Jagadeesh Muralikrishnan | 120172243 | jagkrish     |
-| Varun Lakshmanan             | 120169595 | varunl11     |
+| Team Members                 | UID       | Email ID             |
+|------------------------------|-----------|----------------------|
+| Sai Jagadeesh Muralikrishnan | 120172243 | jagkrish@umd.edu     |
+| Varun Lakshmanan             | 120169595 | varunl11@umd.edu     |
 
 
 This package contains the implementation of the A* Algorithm for a point robot navigating a 2D space with obstacles. It's part of our coursework for ENPM661.
