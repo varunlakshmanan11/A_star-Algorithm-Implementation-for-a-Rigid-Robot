@@ -1,5 +1,3 @@
-## ENPM 661 Project 3
-
 # A* Algorithm Implementation for a Rigid Robot
 
 | Team Members                 | UID       | Directory ID |
