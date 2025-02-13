@@ -1,11 +1,5 @@
 # A* Algorithm Implementation for a Rigid Robot
 
-| Team Members                 | UID       | Email ID             | GitHUB                              |
-|------------------------------|-----------|----------------------|-------------------------------------|
-| Varun Lakshmanan             | 120169595 | varunl11@umd.edu     | https://github.com/varunlakshmanan11|
-| Sai Jagadeesh Muralikrishnan | 120172243 | jagkrish@umd.edu     | https://github.com/cravotics        |
-
-
 This package contains the implementation of the A* Algorithm for a point robot navigating a 2D space with obstacles. It's part of our coursework for ENPM661.
 
 ## Installation of Packages
@@ -92,3 +86,11 @@ Enter the angle of the goal node: 0
 Find the same submission on github using the link below
 
 https://github.com/varunlakshmanan11/ENPM-661-Project-3 
+
+## Contributors
+
+| Team Members                 | UID       | Email ID             | GitHUB                              |
+|------------------------------|-----------|----------------------|-------------------------------------|
+| Varun Lakshmanan             | 120169595 | varunl11@umd.edu     | https://github.com/varunlakshmanan11|
+| Sai Jagadeesh Muralikrishnan | 120172243 | jagkrish@umd.edu     | https://github.com/cravotics        |
+
